@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
-import { Product } from './product';
+import { Product, ProductListResolved } from './product';
 import { ProductService } from './product.service';
 
 @Component({
@@ -23,24 +24,26 @@ export class ProductListComponent implements OnInit {
     this.filteredProducts = this.listFilter ? this.performFilter(this.listFilter) : this.products;
   }
 
-  filteredProducts: Product[] = [];
-  products: Product[] = [];
+  filteredProducts: Product[] | null = [];
+  products: Product[] | null = [];
 
-  constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService, private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    this.productService.getProducts().subscribe({
-      next: products => {
-        this.products = products;
-        this.filteredProducts = this.performFilter(this.listFilter);
-      },
-      error: err => this.errorMessage = err
-    });
+    this.listFilter = this.route.snapshot.queryParamMap.get('filterBy') || '';
+    this.showImage = this.route.snapshot.queryParamMap.get('showImage') === 'true';
+
+    const resolvedData: ProductListResolved = this.route.snapshot.data['resolvedData'];
+    console.log(resolvedData)
+    this.errorMessage = String(resolvedData.error);
+
+    this.products = resolvedData.products;
+    this.filteredProducts = this.performFilter(this.listFilter);
   }
 
   performFilter(filterBy: string): Product[] {
     filterBy = filterBy.toLocaleLowerCase();
-    return this.products.filter((product: Product) =>
+    return this.products!.filter((product: Product) =>
       product.productName.toLocaleLowerCase().indexOf(filterBy) !== -1);
   }
 
